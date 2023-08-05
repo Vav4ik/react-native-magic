@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import Title from "../components/UI/Title";
@@ -7,6 +7,7 @@ import NumberContainer from "../components/game/NumberContainer";
 import PrimaryButton from "../components/UI/PrimaryButton";
 import Card from "../components/UI/Card";
 import InstructionText from "../components/UI/InstructionText";
+import GuessLogItem from "../components/game/GuessLogItem";
 
 const generateRandomBetween = (min, max, exclude) => {
   const rndNum = Math.floor(Math.random() * (max - min)) + min;
@@ -24,12 +25,18 @@ let maxBoundary = 100;
 const GameScreen = ({ userNumber, onGameOver }) => {
   const initialGuess = generateRandomBetween(1, 100, userNumber);
   const [currentGuess, setCurrentGuess] = useState(initialGuess);
+  const [guessRounds, setGuessRounds] = useState([initialGuess]);
 
   useEffect(() => {
     if (currentGuess === userNumber) {
-      onGameOver();
+      onGameOver(guessRounds.length);
     }
   }, [currentGuess, userNumber]);
+
+  useEffect(() => {
+    minBoundary = 1;
+    maxBoundary = 100;
+  }, []);
 
   const nextGuessHandler = (direction) => {
     if (
@@ -56,7 +63,11 @@ const GameScreen = ({ userNumber, onGameOver }) => {
       currentGuess
     );
     setCurrentGuess(newRandomNumber);
+    setGuessRounds((prevGuessRounds) => [newRandomNumber, ...prevGuessRounds]);
   };
+
+  const guestRoundsListLength = guessRounds.length;
+
   return (
     <View style={styles.screen}>
       <Title>Oppnent's Guess:</Title>
@@ -78,7 +89,26 @@ const GameScreen = ({ userNumber, onGameOver }) => {
           </View>
         </View>
       </Card>
-      {/* <View>LOG ROUNDS</View> */}
+      <View style={styles.listContainer}>
+        {/* {guessRounds.map((guessRound) => (
+          <Text key={guessRound}>{guessRound}</Text>
+        ))} */}
+        <FlatList
+          //https://blog.logrocket.com/deep-dive-react-native-flatlist/
+          data={guessRounds}
+          renderItem={(itemData) => (
+            <GuessLogItem
+              roundNumber={guestRoundsListLength - itemData.index}
+              guess={itemData.item}
+            />
+          )}
+          refreshing={false}
+          onRefresh={() => console.log("refreshing")}
+          // ListEmptyComponent={handleEmpty}
+          //keyExtractor is used if in our array of objects there's no property "key" or "id"
+          keyExtractor={(item) => item}
+        />
+      </View>
     </View>
   );
 };
@@ -96,6 +126,10 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flex: 1,
+  },
+  listContainer: {
+    flex: 1,
+    padding: 16,
   },
 });
 
